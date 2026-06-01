@@ -32,14 +32,14 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ---------- TEST ENDPOINT (to verify code is updating) ----------
+// ---------- TEST ENDPOINT (to verify deployment) ----------
 app.get('/test', (_req, res) => {
-  res.json({ message: 'Test endpoint works! Code deployed at ' + new Date().toISOString() });
+  res.json({ message: 'Test endpoint works! Deployed at ' + new Date().toISOString() });
 });
 
-// ---------- Telegram Webhook Endpoint ----------
+// ---------- TELEGRAM WEBHOOK ENDPOINT ----------
 app.post('/webhook', async (req, res) => {
-  console.log('📨 Webhook received at', new Date().toISOString());
+  console.log('📨 Webhook received:', JSON.stringify(req.body));
   try {
     await handleUpdate(req.body);
     res.sendStatus(200);
