@@ -10,10 +10,7 @@ import walletRoutes from './routes/wallet';
 import gameRoutes from './routes/game';
 import userRoutes from './routes/user';
 import { setupGameSocket } from './sockets/gameSocket';
-
-// Telegram bot imports
-import axios from 'axios';
-import { handleUpdate } from './bot';
+import { handleUpdate } from './bot';   // webhook handler
 
 dotenv.config();
 
@@ -35,7 +32,19 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Routes
+// ---------- Telegram Webhook Endpoint ----------
+app.post('/webhook', async (req, res) => {
+  try {
+    await handleUpdate(req.body);
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('Webhook error:', err);
+    res.sendStatus(500);
+  }
+});
+// ----------------------------------------------
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/game', gameRoutes);
@@ -63,31 +72,5 @@ mongoose.connect(MONGODB_URI)
     console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   });
-
-// Telegram bot polling
-async function startPolling() {
-  const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-  if (!BOT_TOKEN || BOT_TOKEN === 'fake_token_for_now') {
-    console.log('⚠️ Telegram bot token not set – polling disabled');
-    return;
-  }
-  let offset = 0;
-  console.log('🤖 Telegram bot polling started');
-  setInterval(async () => {
-    try {
-      const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=30`;
-      const response = await axios.get(url);
-      const updates = response.data.result;
-      for (const update of updates) {
-        await handleUpdate(update);
-        offset = update.update_id + 1;
-      }
-    } catch (err) {
-      // ignore network errors
-    }
-  }, 1500);
-}
-
-startPolling();
 
 export { io };
